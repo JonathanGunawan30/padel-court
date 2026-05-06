@@ -59,11 +59,29 @@ export default function Dashboard() {
         serviceConfig: apiConfig.order,
         token: user.token
       });
-      setBookings(response.data.data || []);
+      
+      const sortedBookings = (response.data.data || []).sort((a: any, b: any) => {
+        return moment(b.order_date).valueOf() - moment(a.order_date).valueOf();
+      });
+
+      setBookings(sortedBookings);
     } catch (error: any) {
       toast.error("Gagal memuat riwayat booking.");
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const getStatusDisplay = (status: string) => {
+    switch (status) {
+      case 'order-success':
+        return { label: 'Lunas', class: 'bg-green-100 text-green-600' };
+      case 'pending':
+        return { label: 'Menunggu Pembayaran', class: 'bg-amber-100 text-amber-600' };
+      case 'expired':
+        return { label: 'Kedaluwarsa', class: 'bg-red-100 text-red-600' };
+      default:
+        return { label: status, class: 'bg-gray-100 text-gray-600' };
     }
   };
 
@@ -181,12 +199,24 @@ export default function Dashboard() {
                               <h3 className="text-lg font-black text-padel-dark uppercase italic tracking-tight">Order #{booking.code}</h3>
                               <span className={cn(
                                 "text-[10px] font-black px-3 py-1 rounded-full italic tracking-widest",
-                                booking.status === 'PAYMENT_SUCCESS' ? "bg-green-100 text-green-600" : 
-                                booking.status === 'PENDING' ? "bg-amber-100 text-amber-600" : "bg-red-100 text-red-600"
+                                getStatusDisplay(booking.status).class
                               )}>
-                                {booking.status}
+                                {getStatusDisplay(booking.status).label}
                               </span>
                             </div>
+                            
+                            {/* schedules details */}
+                            <div className="flex flex-wrap gap-2 mb-4">
+                              {booking.schedules?.map((schedule: any, idx: number) => (
+                                <div key={idx} className="bg-gray-50 border border-gray-100 px-3 py-2 rounded-xl flex flex-col">
+                                  <span className="text-[10px] font-black text-padel-dark italic uppercase">{schedule.field_name}</span>
+                                  <span className="text-[9px] font-bold text-gray-400 uppercase tracking-tighter">
+                                    {moment(schedule.date).format('DD MMM')} • {schedule.time}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-y-2 gap-x-6 text-sm font-bold text-gray-400 mt-3">
                               <div className="flex items-center space-x-2">
                                 <CalendarDaysIcon className="w-4 h-4" />

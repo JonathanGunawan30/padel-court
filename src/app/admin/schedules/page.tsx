@@ -44,6 +44,7 @@ export default function ScheduleManagement() {
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   
   // Selection state for Bulk Delete
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -206,15 +207,17 @@ export default function ScheduleManagement() {
     );
   };
 
-  const toggleSelectAll = () => {
-    if (selectedIds.length === schedules.length) {
-      setSelectedIds([]);
-    } else {
-      setSelectedIds(schedules.map(s => s.uuid));
-    }
-  };
-
   const totalPages = pagination.totalPages;
+
+  const filteredSchedules = schedules.filter(schedule => {
+    const searchStr = searchQuery.toLowerCase();
+    return (
+      schedule.field_name?.toLowerCase().includes(searchStr) ||
+      moment(schedule.date).format('DD MMM YYYY').toLowerCase().includes(searchStr) ||
+      schedule.time?.toLowerCase().includes(searchStr) ||
+      schedule.status?.toLowerCase().includes(searchStr)
+    );
+  });
 
   return (
     <div className="space-y-6">
@@ -226,6 +229,8 @@ export default function ScheduleManagement() {
             <input 
               type="text" 
               placeholder="Cari jadwal..." 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full bg-white border border-gray-200 rounded-2xl py-3 pl-12 pr-4 text-sm focus:ring-2 focus:ring-padel-neon/50 outline-none transition-all"
             />
           </div>
@@ -257,15 +262,21 @@ export default function ScheduleManagement() {
               <tr className="text-left bg-gray-50/50">
                 <th className="px-8 py-5 w-10">
                   <button 
-                    onClick={toggleSelectAll}
+                    onClick={() => {
+                      if (selectedIds.length === filteredSchedules.length && filteredSchedules.length > 0) {
+                        setSelectedIds([]);
+                      } else {
+                        setSelectedIds(filteredSchedules.map(s => s.uuid));
+                      }
+                    }}
                     className={cn(
                       "w-5 h-5 rounded border flex items-center justify-center transition-all",
-                      selectedIds.length === schedules.length && schedules.length > 0
+                      selectedIds.length === filteredSchedules.length && filteredSchedules.length > 0
                         ? "bg-padel-dark border-padel-dark text-padel-neon" 
                         : "bg-white border-gray-300"
                     )}
                   >
-                    {selectedIds.length === schedules.length && schedules.length > 0 && <CheckIcon className="w-3 h-3 stroke-[4]" />}
+                    {selectedIds.length === filteredSchedules.length && filteredSchedules.length > 0 && <CheckIcon className="w-3 h-3 stroke-[4]" />}
                   </button>
                 </th>
                 <th className="px-4 py-5 text-[10px] font-black uppercase tracking-widest text-gray-400">Lapangan</th>
@@ -282,14 +293,14 @@ export default function ScheduleManagement() {
                     <div className="w-10 h-10 border-4 border-padel-dark border-t-padel-neon rounded-full animate-spin mx-auto" />
                   </td>
                 </tr>
-              ) : schedules.length === 0 ? (
+              ) : filteredSchedules.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-8 py-20 text-center text-gray-400 font-bold uppercase tracking-widest text-xs">
-                    Belum ada jadwal yang terbuat.
+                    {searchQuery ? `Tidak ada hasil untuk "${searchQuery}"` : "Belum ada jadwal yang terbuat."}
                   </td>
                 </tr>
               ) : (
-                schedules.map((schedule) => (
+                filteredSchedules.map((schedule) => (
                   <tr key={schedule.uuid} className={cn("hover:bg-gray-50/30 transition-colors group", selectedIds.includes(schedule.uuid) && "bg-padel-neon/5")}>
                     <td className="px-8 py-6">
                       <button 
@@ -341,22 +352,68 @@ export default function ScheduleManagement() {
         </div>
 
         {/* Pagination */}
-        <div className="px-8 py-6 bg-gray-50/30 border-t border-gray-50 flex items-center justify-between">
+        <div className="px-8 py-6 bg-gray-50/30 border-t border-gray-50 flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">
-            Page {pagination.page} of {Math.max(1, totalPages)}
+            Showing Page {pagination.page} of {Math.max(1, totalPages)}
           </p>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 overflow-x-auto pb-2 sm:pb-0 max-w-full">
             <button 
               disabled={pagination.page <= 1 || isLoading}
               onClick={() => handlePageChange(pagination.page - 1)}
-              className="px-4 py-2 text-xs font-black italic uppercase bg-white border border-gray-200 rounded-xl hover:bg-gray-50 disabled:opacity-30 transition-all"
+              className="px-4 py-2 text-xs font-black italic uppercase bg-white border border-gray-200 rounded-xl hover:bg-gray-50 disabled:opacity-30 transition-all shrink-0"
             >
               Prev
             </button>
+            
+            <div className="flex items-center gap-1">
+              {(() => {
+                const range = [];
+                const delta = 1;
+                const left = pagination.page - delta;
+                const right = pagination.page + delta + 1;
+                let l: any;
+
+                for (let i = 1; i <= totalPages; i++) {
+                  if (i === 1 || i === totalPages || (i >= left && i < right)) {
+                    range.push(i);
+                  }
+                }
+
+                return range.reduce((acc: any[], i) => {
+                  if (l) {
+                    if (i - l === 2) {
+                      acc.push(l + 1);
+                    } else if (i - l !== 1) {
+                      acc.push('...');
+                    }
+                  }
+                  acc.push(i);
+                  l = i;
+                  return acc;
+                }, []).map((page, index) => (
+                  <button
+                    key={index}
+                    disabled={page === '...' || isLoading}
+                    onClick={() => typeof page === 'number' && handlePageChange(page)}
+                    className={cn(
+                      "min-w-[32px] sm:min-w-[40px] h-8 sm:h-10 flex items-center justify-center text-[10px] sm:text-xs font-black italic uppercase rounded-xl transition-all",
+                      page === pagination.page 
+                        ? "bg-padel-dark text-padel-neon shadow-lg shadow-padel-dark/10" 
+                        : page === '...' 
+                          ? "text-gray-400 cursor-default"
+                          : "bg-white border border-gray-200 text-padel-dark hover:bg-gray-50"
+                    )}
+                  >
+                    {page}
+                  </button>
+                ));
+              })()}
+            </div>
+
             <button 
               disabled={pagination.page >= totalPages || isLoading}
               onClick={() => handlePageChange(pagination.page + 1)}
-              className="px-4 py-2 text-xs font-black italic uppercase bg-white border border-gray-200 rounded-xl hover:bg-gray-50 disabled:opacity-30 transition-all"
+              className="px-4 py-2 text-xs font-black italic uppercase bg-white border border-gray-200 rounded-xl hover:bg-gray-50 disabled:opacity-30 transition-all shrink-0"
             >
               Next
             </button>

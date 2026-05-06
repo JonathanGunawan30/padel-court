@@ -138,7 +138,7 @@ export default function Detail({ params }: { params: { uuid: any } }) {
                 <div>
                   <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Harga Sewa</p>
                   <p className="text-2xl font-black text-padel-dark italic">
-                    {field?.price_per_hour} <span className="text-sm font-bold text-gray-300 not-italic">/ jam</span>
+                    {field?.price_per_hour ? `Rp ${field.price_per_hour.toLocaleString('id-ID')}` : "Loading..."} <span className="text-sm font-bold text-gray-300 not-italic">/ jam</span>
                   </p>
                 </div>
               </div>

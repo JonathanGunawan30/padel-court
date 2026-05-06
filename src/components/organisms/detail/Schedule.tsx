@@ -91,10 +91,12 @@ export default function Schedule({params}: { params: { uuid: any } }) {
       .reduce((total: number, price: number) => total + price, 0);
   }
 
-  const convertToNumber = (rupiah: string) => {
-    if (!rupiah) return 0;
-    const numberString = rupiah.replace(/Rp\.|,/g, '').replace(/\./g, '');
-    return parseInt(numberString, 10);
+  const convertToNumber = (rupiah: any) => {
+    if (typeof rupiah === 'number') return rupiah;
+    if (!rupiah || typeof rupiah !== 'string') return 0;
+    // Strip everything except digits
+    const numberString = rupiah.replace(/\D/g, '');
+    return parseInt(numberString, 10) || 0;
   }
 
   const formatToRupiah = (number: number) => {
@@ -180,9 +182,9 @@ export default function Schedule({params}: { params: { uuid: any } }) {
   };
 
   return (
-    <div className="flex flex-col lg:flex-row gap-12 items-start">
+    <div className="flex flex-col lg:flex-row gap-8 relative min-h-[500px]">
       {/* Main Schedule Selector */}
-      <div className="w-full lg:w-2/3 bg-white rounded-[2.5rem] shadow-sm border border-gray-100 p-8 lg:p-12">
+      <div className="w-full lg:flex-1 bg-white rounded-[2.5rem] shadow-sm border border-gray-100 p-8 lg:p-12 self-start">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-8 mb-12">
           <div>
             <div className="flex items-center space-x-2 text-padel-dark opacity-50 mb-2">
@@ -271,7 +273,7 @@ export default function Schedule({params}: { params: { uuid: any } }) {
       </div>
 
       {/* Booking Summary Card */}
-      <div className="w-full lg:w-1/3 lg:sticky lg:top-32 space-y-6">
+      <div className="w-full lg:w-[380px] shrink-0 top-24 self-start space-y-6 z-30">
         <div className="bg-padel-dark rounded-[2.5rem] p-8 lg:p-10 shadow-2xl text-white relative overflow-hidden">
           <div className="relative z-10">
             <div className="flex items-center space-x-2 text-padel-neon mb-6 opacity-80">
@@ -289,8 +291,8 @@ export default function Schedule({params}: { params: { uuid: any } }) {
                 <span className="text-xl font-black italic">{selectedSchedule.length}</span>
               </div>
               <div className="flex justify-between items-center py-4 border-b border-white/5">
-                <span className="text-white/50 text-sm font-medium uppercase tracking-wider">Pajak (0%)</span>
-                <span className="text-lg font-black italic">Rp 0</span>
+                <span className="text-white/50 text-sm font-medium uppercase tracking-wider">Pajak</span>
+                <span className="text-[10px] font-black italic text-padel-neon uppercase">Sudah Termasuk Pajak</span>
               </div>
               <div className="flex justify-between items-end pt-4">
                 <div>

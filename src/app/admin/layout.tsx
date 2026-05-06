@@ -64,32 +64,44 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       >
         <div className="flex flex-col h-full">
           {/* Logo Section */}
-          <div className="h-20 flex items-center px-6 border-b border-white/5">
-            <Link href="/" className="flex items-center space-x-3 overflow-hidden">
-              <div className="w-8 h-8 bg-padel-neon rounded-lg flex-shrink-0" />
-              <span className={cn("font-display text-xl italic transition-opacity", !isSidebarOpen && "lg:opacity-0")}>
+          <div className="h-20 flex items-center px-6 border-b border-white/5 overflow-hidden">
+            <Link href="/" className={cn("flex items-center shrink-0 transition-all duration-300", isSidebarOpen ? "space-x-3" : "space-x-0")}>
+              <div className="w-8 h-8 bg-padel-neon rounded-lg flex-shrink-0 flex items-center justify-center shadow-[0_0_15px_rgba(217,241,22,0.3)]">
+                <span className="text-padel-dark font-black text-lg italic mt-0.5">P</span>
+              </div>
+              <span className={cn(
+                "font-display text-xl italic transition-all duration-300 whitespace-nowrap",
+                !isSidebarOpen && "opacity-0 invisible w-0"
+              )}>
                 PADEL<span className="text-padel-neon">ADMIN</span>
               </span>
             </Link>
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 py-6 px-4 space-y-2 overflow-y-auto custom-scrollbar">
+          <nav className={cn(
+            "flex-1 py-6 space-y-2 overflow-y-auto custom-scrollbar overflow-x-hidden transition-all duration-300",
+            isSidebarOpen ? "px-4" : "px-3"
+          )}>
             {menuItems.map((item) => (
               <Link
                 key={item.name}
                 href={item.href}
                 className={cn(
-                  "flex items-center space-x-4 p-4 rounded-2xl transition-all group",
+                  "flex items-center rounded-2xl transition-all group",
+                  isSidebarOpen ? "space-x-4 p-4" : "space-x-0 p-4 justify-center",
                   pathname === item.href 
                     ? "bg-padel-neon text-padel-dark font-black italic shadow-[0_0_20px_rgba(217,241,22,0.2)]" 
                     : "text-white/50 hover:bg-white/5 hover:text-white"
                 )}
               >
-                <div className={cn("transition-transform group-hover:scale-110", pathname === item.href ? "text-padel-dark" : "text-current")}>
+                <div className={cn("transition-transform group-hover:scale-110 shrink-0", pathname === item.href ? "text-padel-dark" : "text-current")}>
                   {item.icon}
                 </div>
-                <span className={cn("whitespace-nowrap transition-opacity", !isSidebarOpen && "lg:opacity-0")}>
+                <span className={cn(
+                  "whitespace-nowrap transition-all duration-300", 
+                  !isSidebarOpen && "opacity-0 invisible w-0"
+                )}>
                   {item.name}
                 </span>
               </Link>
@@ -97,13 +109,21 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </nav>
 
           {/* Logout Section */}
-          <div className="p-4 border-t border-white/5">
+          <div className="p-4 border-t border-white/5 overflow-hidden">
             <button 
               onClick={handleLogout}
-              className="flex items-center space-x-4 w-full p-4 rounded-2xl text-red-400 hover:bg-red-500/10 transition-colors group"
+              className={cn(
+                "flex items-center w-full rounded-2xl text-red-400 hover:bg-red-500/10 transition-colors group",
+                isSidebarOpen ? "space-x-4 p-4" : "space-x-0 p-4 justify-center"
+              )}
             >
-              <ArrowLeftOnRectangleIcon className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
-              <span className={cn("whitespace-nowrap", !isSidebarOpen && "lg:opacity-0")}>Keluar</span>
+              <ArrowLeftOnRectangleIcon className="w-6 h-6 group-hover:translate-x-1 transition-transform shrink-0" />
+              <span className={cn(
+                "whitespace-nowrap transition-all duration-300", 
+                !isSidebarOpen && "opacity-0 invisible w-0"
+              )}>
+                Keluar
+              </span>
             </button>
           </div>
         </div>
@@ -118,10 +138,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
               className="p-2 rounded-xl hover:bg-gray-100 transition-colors"
             >
-              {isSidebarOpen ? <XMarkIcon className="w-6 h-6 lg:hidden" /> : <Bars3Icon className="w-6 h-6" />}
-              <span className="hidden lg:block">
-                 {isSidebarOpen ? <Bars3Icon className="w-6 h-6" /> : <Bars3Icon className="w-6 h-6" />}
-              </span>
+              {isSidebarOpen ? (
+                <>
+                  <XMarkIcon className="w-6 h-6 lg:hidden" />
+                  <Bars3Icon className="w-6 h-6 hidden lg:block" />
+                </>
+              ) : (
+                <Bars3Icon className="w-6 h-6" />
+              )}
             </button>
             <h2 className="text-lg font-black italic text-padel-dark uppercase hidden sm:block">
               {menuItems.find(i => i.href === pathname)?.name || "Admin Panel"}

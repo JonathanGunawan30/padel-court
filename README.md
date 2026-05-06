@@ -1,44 +1,62 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# PadelBook Frontend
 
-## Getting Started
+The premier padel court booking platform designed for efficiency and speed. Built with Next.js 15, Tailwind CSS, and fully integrated with a microservices ecosystem.
 
-First, install the dependencies:
+## Main Features
 
-```bash
-npm install --legacy-peer-deps
-# or
-npm install --force
-````
+### Customer Experience
+- Real-time Booking System: Interactively select courts, dates, and session times.
+- Integrated Payment: Supports various payment methods via Midtrans (VA, E-Wallet, Credit Card).
+- Automated Invoices: Download PDF payment proofs directly from the dashboard after successful payment.
+- Booking History: Monitor order status (Paid, Pending Payment, Expired) in a clean, unified view.
+- Responsive Design: Modern UI optimized for both mobile and desktop access.
 
-First, run the development server:
+### Admin Management
+- Dynamic Statistics: Real-time monitoring of Total Revenue, Order Count, Total Courts, and Schedules.
+- Schedule Management: Automatically generate monthly schedules and manage court session availability.
+- Order Management: Access detailed order information, including customer data and selected sessions.
+- Advanced Pagination: Efficient data navigation for large transaction volumes.
+- Quick Search: Filter schedules and orders by name or ID.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## Tech Stack
+- Framework: Next.js 16 (App Router)
+- Styling: Tailwind CSS
+- Icons: Heroicons & React Icons
+- Date Handling: Moment.js & React Datepicker
+- Notifications: React Toastify & SweetAlert2
+- State Management: React Context API (Auth Provider)
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Installation
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1. Clone this repository.
+2. Navigate to the frontend directory:
+   ```bash
+   cd frontend
+   ```
+3. Install dependencies (Use legacy-peer-deps flag if version conflicts occur):
+   ```bash
+   npm install --legacy-peer-deps
+   ```
+4. Configure Environment Variables (.env):
+   ```env
+   NEXT_PUBLIC_API_URL=http://localhost:8000
+   # Configure other services as needed
+   ```
+5. Run the application:
+   ```bash
+   npm run dev
+   ```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## UI Architecture
+This application follows an Atomic/Organism design pattern for components:
+- src/components/atoms: Basic components (Buttons, Badges).
+- src/components/organisms: Complex components (Footer, Header, Detail Cards, Schedule Grids).
+- src/app/admin: All administrator functional modules.
+- src/app/dashboard: Dedicated modules for customers.
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Backend Integration
+The frontend communicates with 4 primary services:
+1. User Service: Authentication and Profile management.
+2. Field Service: Court and schedule slot management.
+3. Order Service: Order creation and status synchronization.
+4. Payment Service: Midtrans payment link generation and webhook handling.

@@ -1,6 +1,6 @@
 # PadelBook Frontend
 
-The premier padel court booking platform designed for efficiency and speed. Built with Next.js 15, Tailwind CSS, and fully integrated with a microservices ecosystem.
+The premier padel court booking platform designed for efficiency and speed. Built with Next.js 16, Tailwind CSS, and fully integrated with a microservices ecosystem.
 
 ## Main Features
 

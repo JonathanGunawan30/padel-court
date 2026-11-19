@@ -2,11 +2,9 @@
 import Link from "next/link";
 import React, {useContext, useState} from "react";
 import axios from "axios";
-import apiConfig from "@/config/api";
 import {useRouter} from "next/navigation";
 import {toast} from "react-toastify";
 import {AuthContext} from "@/context/AuthProvider";
-import Cookies from "js-cookie";
 import { 
   UserIcon, 
   LockClosedIcon, 
@@ -26,15 +24,13 @@ export default function LoginForm() {
     e.preventDefault();
     setIsLoading(true);
     try {
-      const response = await axios.post(`${apiConfig.user.baseUrl}/api/v1/auth/login`, {
+      const response = await axios.post(`/api/auth/login`, {
         username,
         password,
-      });
-      const { token, data } = response.data;
-      Cookies.set("authToken", token, { expires: 1 });
-      localStorage.setItem("authToken", token);
+      }, { withCredentials: true });
+      const { data } = response.data;
       localStorage.setItem("userData", JSON.stringify(data));
-      setUser({ token, ...data });
+      setUser(data);
       setIsLoading(false);
       toast.success('Login berhasil');
       router.push('/');

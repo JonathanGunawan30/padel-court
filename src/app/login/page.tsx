@@ -2,17 +2,18 @@
 import Link from "next/link";
 import LoginForm from "@/components/organisms/login/LoginForm";
 import {useRouter} from "next/navigation";
-import {useEffect} from "react";
+import {useContext, useEffect} from "react";
 import { HomeIcon } from "@heroicons/react/24/solid";
+import { AuthContext } from "@/context/AuthProvider";
 
 export default function Login() {
-  const router = useRouter()
+  const router = useRouter();
+  const { user } = useContext(AuthContext) as any;
   useEffect(() => {
-    const token = localStorage.getItem('authToken');
-    if (token) {
+    if (user) {
       router.push('/');
     }
-  }, [router]);
+  }, [user, router]);
 
   return (
     <main className="min-h-screen bg-padel-dark flex flex-col items-center justify-center p-4 relative overflow-hidden">

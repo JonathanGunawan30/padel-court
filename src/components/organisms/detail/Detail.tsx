@@ -1,8 +1,6 @@
 'use client';
 import React, { useEffect, useState } from "react";
-import apiConfig from "@/config/api";
-import crypto from "crypto";
-import axios from "axios";
+import { apiRequest } from "@/library/api";
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Pagination } from 'swiper/modules';
 import 'swiper/css';
@@ -27,20 +25,7 @@ export default function Detail({ params }: { params: { uuid: any } }) {
       if (!uuid) return;
       
       try {
-        const serviceName = apiConfig.field.serviceName;
-        const signatureKey = apiConfig.field.signatureKey;
-        const requestAt = new Date().toISOString();
-        const validateKey = `${serviceName}:${signatureKey}:${requestAt}`;
-        const hash = crypto.createHash('sha256').update(validateKey);
-        const apiKey = hash.digest('hex');
-
-        const response = await axios.get(`${apiConfig.field.baseUrl}/api/v1/field/${uuid}`, {
-          headers: {
-            "x-service-name": serviceName,
-            "x-request-at": requestAt,
-            "x-api-key": apiKey,
-          },
-        });
+        const response = await apiRequest("get", "field", `/api/v1/field/${uuid}`);
         setField(response.data.data);
       } catch (error: any) {
         if (error.code === 'ERR_NETWORK') {

@@ -3,11 +3,9 @@ import React, { useState, useContext, useEffect } from "react";
 import Header from "@/components/organisms/header/Header";
 import Footer from "@/components/organisms/footer/Footer";
 import { AuthContext } from "@/context/AuthProvider";
-import apiConfig from "@/config/api";
 import { apiRequest } from "@/library/api";
-import axios from "axios";
 import { toast } from "react-toastify";
-import moment from "moment";
+import { cn, formatDateShort, formatDateTime, getOrderStatusDisplay } from "@/library/utils";
 import { 
   UserIcon, 
   ShoppingBagIcon, 
@@ -21,12 +19,6 @@ import {
   ArrowTopRightOnSquareIcon,
   DocumentArrowDownIcon
 } from "@heroicons/react/24/outline";
-import { clsx, type ClassValue } from "clsx";
-import { twMerge } from "tailwind-merge";
-
-function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
-}
 
 export default function Dashboard() {
   const { user, setUser } = useContext(AuthContext) as any;
@@ -54,16 +46,13 @@ export default function Dashboard() {
   }, [user]);
 
   const fetchHistory = async () => {
-    if (!user?.token) return;
+    if (!user) return;
     setIsLoading(true);
     try {
-      const response = await apiRequest('get', `${apiConfig.order.baseUrl}/api/v1/order/user`, {
-        serviceConfig: apiConfig.order,
-        token: user.token
-      });
+      const response = await apiRequest("get", "order", "/api/v1/order/user");
       
       const sortedBookings = (response.data.data || []).sort((a: any, b: any) => {
-        return moment(b.order_date).valueOf() - moment(a.order_date).valueOf();
+        return new Date(b.order_date).getTime() - new Date(a.order_date).getTime();
       });
 
       setBookings(sortedBookings);
@@ -75,34 +64,19 @@ export default function Dashboard() {
     }
   };
 
-  const getStatusDisplay = (status: string) => {
-    switch (status) {
-      case 'order-success':
-        return { label: 'Lunas', class: 'bg-green-100 text-green-600' };
-      case 'pending':
-        return { label: 'Menunggu Pembayaran', class: 'bg-amber-100 text-amber-600' };
-      case 'expired':
-        return { label: 'Kedaluwarsa', class: 'bg-red-100 text-red-600' };
-      default:
-        return { label: status, class: 'bg-gray-100 text-gray-600' };
-    }
-  };
-
   useEffect(() => {
     if (activeTab === 'history') {
       fetchHistory();
     }
-  }, [activeTab, user?.token]);
+  }, [activeTab, user]);
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user?.uuid || !user?.token) return;
+    if (!user?.uuid) return;
     
     setIsLoading(true);
     try {
-      const response = await apiRequest('put', `${apiConfig.user.baseUrl}/api/v1/auth/${user.uuid}`, {
-        serviceConfig: apiConfig.user,
-        token: user.token,
+      const response = await apiRequest("put", "user", `/api/v1/auth/${user.uuid}`, {
         data: {
           ...profileData,
           username: user.username
@@ -203,9 +177,9 @@ export default function Dashboard() {
                                 <h3 className="text-lg font-black text-padel-dark uppercase italic tracking-tight">Order #{booking.code}</h3>
                                 <span className={cn(
                                   "text-[10px] font-black px-3 py-1 rounded-full italic tracking-widest",
-                                  getStatusDisplay(booking.status).class
+                                  getOrderStatusDisplay(booking.status).class
                                 )}>
-                                  {getStatusDisplay(booking.status).label}
+                                  {getOrderStatusDisplay(booking.status).label}
                                 </span>
                               </div>
                               
@@ -215,7 +189,7 @@ export default function Dashboard() {
                                   <div key={idx} className="bg-gray-50 border border-gray-100 px-3 py-2 rounded-xl flex flex-col">
                                     <span className="text-[10px] font-black text-padel-dark italic uppercase">{schedule.field_name}</span>
                                     <span className="text-[9px] font-bold text-gray-400 uppercase tracking-tighter">
-                                      {moment(schedule.date).format('DD MMM')} • {schedule.time}
+                                      {formatDateShort(schedule.date)} • {schedule.time}
                                     </span>
                                   </div>
                                 ))}
@@ -224,7 +198,7 @@ export default function Dashboard() {
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-y-2 gap-x-6 text-sm font-bold text-gray-400 mt-3">
                                 <div className="flex items-center space-x-2">
                                   <CalendarDaysIcon className="w-4 h-4" />
-                                  <span>{moment(booking.order_date).format('DD MMM YYYY, HH:mm')}</span>
+                                  <span>{formatDateTime(booking.order_date)}</span>
                                 </div>
                                 <div className="flex items-center space-x-2">
                                   <CreditCardIcon className="w-4 h-4" />

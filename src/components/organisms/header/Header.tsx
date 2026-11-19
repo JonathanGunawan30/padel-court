@@ -4,13 +4,8 @@ import {usePathname, useRouter} from "next/navigation";
 import React, {useContext, useEffect, useState} from "react";
 import {AuthContext} from "@/context/AuthProvider";
 import {UserIcon} from "@heroicons/react/24/solid";
-import {clsx, type ClassValue} from "clsx";
-import {twMerge} from "tailwind-merge";
+import {cn} from "@/library/utils";
 import TopBanner from "@/components/organisms/header/TopBanner";
-
-function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
-}
 
 export default function Header() {
   const { user, logout } = useContext(AuthContext) as any;
@@ -35,7 +30,7 @@ export default function Header() {
 
   const handleLogout = async (e: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => {
     e.preventDefault();
-    logout();
+    await logout();
     router.push('/login');
   };
 

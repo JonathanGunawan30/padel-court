@@ -85,7 +85,7 @@ function SuccessContent() {
               )}
               {isFailure && (
                 <Link 
-                  href="/booking" 
+                  href="/#field-list" 
                   className="w-full bg-white/5 text-white/70 font-bold py-4 rounded-xl hover:bg-white/10 transition-all border border-white/10 text-center"
                 >
                   Try Again

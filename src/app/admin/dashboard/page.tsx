@@ -8,10 +8,9 @@ import {
   CalendarDaysIcon
 } from "@heroicons/react/24/outline";
 import { AuthContext } from "@/context/AuthProvider";
-import apiConfig from "@/config/api";
 import { apiRequest } from "@/library/api";
 import { toast } from "react-toastify";
-import moment from "moment";
+import { formatDate, getOrderStatusDisplay } from "@/library/utils";
 
 export default function AdminOverview() {
   const { user } = useContext(AuthContext) as any;
@@ -25,33 +24,21 @@ export default function AdminOverview() {
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchDashboardData = async () => {
-    if (!user?.token) return;
+    if (!user) return;
     try {
-      // Fetch orders for stats and recent list
-      const orderResponse = await apiRequest('get', `${apiConfig.order.baseUrl}/api/v1/order?page=1&limit=100`, {
-        serviceConfig: apiConfig.order,
-        token: user.token
-      });
-      
+      const [orderResponse, fieldResponse, scheduleResponse] = await Promise.all([
+        apiRequest("get", "order", "/api/v1/order?page=1&limit=100"),
+        apiRequest("get", "field", "/api/v1/field/pagination?page=1&limit=1&sort_column=id&sort_order=desc"),
+        apiRequest("get", "field", "/api/v1/field/schedule/pagination?page=1&limit=1&sort_column=id&sort_order=desc"),
+      ]);
+
       const allOrders = orderResponse.data?.data?.data || [];
       const totalOrders = orderResponse.data?.data?.total_data || 0;
-      
       const totalRevenue = allOrders
         .filter((o: any) => o.status === 'order-success')
         .reduce((acc: number, curr: any) => acc + (curr.amount || 0), 0);
 
-      // Fetch fields
-      const fieldResponse = await apiRequest('get', `${apiConfig.field.baseUrl}/api/v1/field/pagination?page=1&limit=1&sort_column=id&sort_order=desc`, {
-        serviceConfig: apiConfig.field,
-        token: user.token
-      });
       const totalFields = fieldResponse.data?.data?.total_data || 0;
-
-      // Fetch schedules
-      const scheduleResponse = await apiRequest('get', `${apiConfig.field.baseUrl}/api/v1/field/schedule/pagination?page=1&limit=1&sort_column=id&sort_order=desc`, {
-        serviceConfig: apiConfig.field,
-        token: user.token
-      });
       const totalSchedules = scheduleResponse.data?.data?.total_data || 0;
       
       setStats([
@@ -92,20 +79,7 @@ export default function AdminOverview() {
 
   useEffect(() => {
     fetchDashboardData();
-  }, [user?.token]);
-
-  const getStatusDisplay = (status: string) => {
-    switch (status) {
-      case 'order-success':
-        return { label: 'Lunas', class: 'bg-green-100 text-green-600' };
-      case 'pending':
-        return { label: 'Menunggu Pembayaran', class: 'bg-amber-100 text-amber-600' };
-      case 'expired':
-        return { label: 'Kedaluwarsa', class: 'bg-red-100 text-red-600' };
-      default:
-        return { label: status, class: 'bg-gray-100 text-gray-600' };
-    }
-  };
+  }, [user]);
 
   return (
     <div className="space-y-8">
@@ -161,13 +135,13 @@ export default function AdminOverview() {
                     <tr key={order.code} className="hover:bg-gray-50/50 transition-colors">
                       <td className="px-8 py-6 font-black text-padel-dark">#{order.code}</td>
                       <td className="px-8 py-6 font-bold text-gray-500">{order.user_name}</td>
-                      <td className="px-8 py-6 text-gray-400">{moment(order.order_date).format('DD MMM YYYY')}</td>
+                      <td className="px-8 py-6 text-gray-400">{formatDate(order.order_date)}</td>
                       <td className="px-8 py-6 font-black text-padel-dark">Rp {order.amount.toLocaleString()}</td>
                       <td className="px-8 py-6">
                         <span className={`text-[10px] font-black px-3 py-1 rounded-full italic tracking-widest ${
-                          getStatusDisplay(order.status).class
+                          getOrderStatusDisplay(order.status).class
                         }`}>
-                          {getStatusDisplay(order.status).label}
+                          {getOrderStatusDisplay(order.status).label}
                         </span>
                       </td>
                     </tr>

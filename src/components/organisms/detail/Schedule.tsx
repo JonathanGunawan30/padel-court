@@ -1,10 +1,7 @@
 'use client'
 import React, {useContext, useEffect, useState} from "react";
-import moment from "moment/moment";
-import apiConfig from "@/config/api";
-import {Hash} from "node:crypto";
-import crypto from "crypto";
-import axios from "axios";
+import { apiRequest } from "@/library/api";
+import { cn, formatISODate } from "@/library/utils";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import {toast} from "react-toastify";
@@ -23,12 +20,6 @@ import {
   ExclamationCircleIcon,
   InformationCircleIcon
 } from "@heroicons/react/24/outline";
-import { clsx, type ClassValue } from "clsx";
-import { twMerge } from "tailwind-merge";
-
-function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
-}
 
 export default function Schedule({params}: { params: { uuid: any } }) {
   const uuid = params.uuid
@@ -43,24 +34,9 @@ export default function Schedule({params}: { params: { uuid: any } }) {
     if (!uuid) return;
     
     try {
-      const now: string = moment(selectedDate || new Date()).format('YYYY-MM-DD');
-      const serviceName: string | undefined = apiConfig.field.serviceName;
-      const signatureKey: string | undefined = apiConfig.field.signatureKey;
-      const requestAt: string = new Date().toISOString();
-      const validateKey: string = `${serviceName}:${signatureKey}:${requestAt}`;
-      const hash: Hash = crypto.createHash('sha256');
-      hash.update(validateKey);
-      const apiKey: string = hash.digest('hex');
-      
-      const response = await axios.get(`${apiConfig.field.baseUrl}/api/v1/field/schedule/lists/${uuid}`, {
-        headers: {
-          "x-service-name": serviceName,
-          "x-request-at": requestAt,
-          "x-api-key": apiKey,
-        },
-        params: {
-          date: now,
-        },
+      const now: string = formatISODate(selectedDate || new Date());
+      const response = await apiRequest("get", "field", `/api/v1/field/schedule/lists/${uuid}`, {
+        params: { date: now },
       });
       
       const fetchedCards = response.data.data.map((item: any) => ({
@@ -104,6 +80,7 @@ export default function Schedule({params}: { params: { uuid: any } }) {
   }
 
   useEffect(() => {
+    setSelectedSchedule([]);
     fetchData(today);
   }, [today, uuid]);
 
@@ -135,26 +112,22 @@ export default function Schedule({params}: { params: { uuid: any } }) {
       if (result.isConfirmed) {
         setIsLoading(true);
         try {
-          const serviceName = apiConfig.order.serviceName;
-          const signatureKey = apiConfig.order.signatureKey;
-          const requestAt = new Date().toISOString();
-          const validateKey = `${serviceName}:${signatureKey}:${requestAt}`;
-          const hash = crypto.createHash('sha256').update(validateKey);
-          const apiKey = hash.digest('hex');
-
-          const response = await axios.post(`${apiConfig.order.baseUrl}/api/v1/order`, {
-            field_schedule_ids: selectedSchedule,
-          }, {
-            headers: {
-              Authorization: `Bearer ${user.token}`,
-              "x-service-name": serviceName,
-              "x-request-at": requestAt,
-              "x-api-key": apiKey,
-            }
+          const response = await apiRequest("post", "order", "/api/v1/order", {
+            data: {
+              field_schedule_ids: selectedSchedule,
+            },
           });
 
+          setIsLoading(false);
           toast.success("Order berhasil dibuat!");
-          router.push(response.data.data.payment_link);
+          const paymentLink = response.data?.data?.payment_link;
+          if (typeof paymentLink === "string" && /^https?:\/\//i.test(paymentLink)) {
+            window.location.href = paymentLink;
+          } else if (typeof paymentLink === "string" && paymentLink.startsWith("/")) {
+            router.push(paymentLink);
+          } else {
+            router.push("/dashboard");
+          }
         } catch (error: any) {
           setIsLoading(false);
           toast.error(error.response?.data?.message || "Gagal membuat order.");

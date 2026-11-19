@@ -11,21 +11,13 @@ import {
   CloudArrowUpIcon
 } from "@heroicons/react/24/outline";
 import { AuthContext } from "@/context/AuthProvider";
-import apiConfig from "@/config/api";
-import { apiRequest, getAuthHeaders } from "@/library/api";
+import { apiRequest } from "@/library/api";
 import { toast } from "react-toastify";
-import moment from "moment";
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
-import { clsx, type ClassValue } from "clsx";
-import { twMerge } from "tailwind-merge";
-import axios from "axios";
+import { cn, formatDate } from "@/library/utils";
 
 const MySwal = withReactContent(Swal);
-
-function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
-}
 
 const swalConfig: any = {
   customClass: {
@@ -67,14 +59,11 @@ export default function FieldManagement() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const fetchFields = async (page = 1) => {
-    if (!user?.token) return;
+    if (!user) return;
     setIsLoading(true);
     setSelectedIds([]);
     try {
-      const response = await apiRequest('get', `${apiConfig.field.baseUrl}/api/v1/field/pagination?page=${page}&limit=${pagination.limit}&sort_column=created_at&sort_order=desc`, {
-        serviceConfig: apiConfig.field,
-        token: user.token
-      });
+      const response = await apiRequest("get", "field", `/api/v1/field/pagination?page=${page}&limit=${pagination.limit}&sort_column=created_at&sort_order=desc`);
       const result = response.data.data;
       setFields(result.data || []);
       setPagination({
@@ -92,7 +81,7 @@ export default function FieldManagement() {
 
   useEffect(() => {
     fetchFields(pagination.page);
-  }, [user?.token, pagination.page]);
+  }, [user, pagination.page]);
 
   const handlePageChange = (newPage: number) => {
     setPagination(prev => ({ ...prev, page: newPage }));
@@ -116,7 +105,7 @@ export default function FieldManagement() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user?.token) return;
+    if (!user) return;
 
     setIsSubmitting(true);
     try {
@@ -129,14 +118,11 @@ export default function FieldManagement() {
         data.append("images", file);
       });
 
-      const headers = getAuthHeaders(apiConfig.field, user.token);
-      
       if (editingField) {
-        // Use axios directly for multipart/form-data with PUT
-        await axios.put(`${apiConfig.field.baseUrl}/api/v1/field/${editingField.uuid}`, data, { headers });
+        await apiRequest("put", "field", `/api/v1/field/${editingField.uuid}`, { data });
         toast.success("Lapangan berhasil diperbarui!");
       } else {
-        await axios.post(`${apiConfig.field.baseUrl}/api/v1/field`, data, { headers });
+        await apiRequest("post", "field", "/api/v1/field", { data });
         toast.success("Lapangan baru berhasil ditambahkan!");
       }
 
@@ -172,10 +158,7 @@ export default function FieldManagement() {
 
     if (result.isConfirmed) {
       try {
-        await apiRequest('delete', `${apiConfig.field.baseUrl}/api/v1/field/${uuid}`, {
-          serviceConfig: apiConfig.field,
-          token: user.token
-        });
+        await apiRequest("delete", "field", `/api/v1/field/${uuid}`);
         toast.success("Lapangan berhasil dihapus.");
         fetchFields(pagination.page);
       } catch (error) {
@@ -205,10 +188,7 @@ export default function FieldManagement() {
 
       for (const uuid of selectedIds) {
         try {
-          await apiRequest('delete', `${apiConfig.field.baseUrl}/api/v1/field/${uuid}`, {
-            serviceConfig: apiConfig.field,
-            token: user.token
-          });
+          await apiRequest("delete", "field", `/api/v1/field/${uuid}`);
           successCount++;
         } catch (error) {
           failCount++;
@@ -377,7 +357,7 @@ export default function FieldManagement() {
                       Rp {field.price_per_hour.toLocaleString()}
                     </td>
                     <td className="px-8 py-6 text-gray-400 font-medium">
-                      {moment(field.created_at).format('DD MMM YYYY')}
+                      {formatDate(field.created_at)}
                     </td>
                     <td className="px-8 py-6">
                       <div className="flex items-center justify-end space-x-2">

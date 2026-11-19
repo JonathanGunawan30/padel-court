@@ -2,7 +2,6 @@
 import Link from "next/link";
 import React, {useState} from "react";
 import {useRouter} from "next/navigation";
-import apiConfig from "@/config/api";
 import axios from "axios";
 import {toast} from "react-toastify";
 import { 
@@ -30,7 +29,7 @@ export default function RegisterForm() {
     e.preventDefault();
     setIsLoading(true);
     try {
-      await axios.post(`${apiConfig.user.baseUrl}/api/v1/auth/register`, {
+      await axios.post(`/api/auth/register`, {
         name,
         email,
         phone_number: phoneNumber,

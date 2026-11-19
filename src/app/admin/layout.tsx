@@ -16,28 +16,22 @@ import {
   UserCircleIcon,
   ClockIcon
 } from "@heroicons/react/24/outline";
-import { clsx, type ClassValue } from "clsx";
-import { twMerge } from "tailwind-merge";
-
-function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
-}
+import { cn } from "@/library/utils";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
-  const { user, logout } = useContext(AuthContext) as any;
+  const { user, isLoading, logout } = useContext(AuthContext) as any;
   const router = useRouter();
   const pathname = usePathname();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   useEffect(() => {
-    // Basic protection: If not admin, redirect
-    if (user && user.role !== 'admin' && user.role !== 'administrator') {
-      router.push('/dashboard');
-    } else if (!user && !localStorage.getItem('authToken')) {
-       // if we are definitely sure no one is logged in, redirect to login
-       // but wait for context first
+    if (isLoading) return;
+    if (!user) {
+      router.replace('/login');
+    } else if (user.role !== 'admin' && user.role !== 'administrator') {
+      router.replace('/dashboard');
     }
-  }, [user, router]);
+  }, [user, isLoading, router]);
 
   const menuItems = [
     { name: "Overview", href: "/admin/dashboard", icon: <Squares2X2Icon className="w-6 h-6" /> },
@@ -48,10 +42,18 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     // { name: "Users", href: "/admin/users", icon: <UsersIcon className="w-6 h-6" /> },
   ];
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     router.push('/login');
   };
+
+  if (isLoading || !user || (user.role !== 'admin' && user.role !== 'administrator')) {
+    return (
+      <div className="min-h-screen bg-[#F0F2F5] flex items-center justify-center">
+        <div className="w-10 h-10 border-4 border-padel-dark border-t-padel-neon rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#F0F2F5] flex overflow-hidden font-sans">

@@ -1,10 +1,12 @@
 'use client';
 import React, { createContext, useState, useEffect, ReactNode } from "react";
+import axios from "axios";
 
 interface AuthContextType {
   user: any;
+  isLoading: boolean;
   setUser: React.Dispatch<any>;
-  logout: () => void;
+  logout: () => Promise<void>;
 }
 
 export const AuthContext = createContext<AuthContextType | null>(null);
@@ -15,31 +17,41 @@ interface AuthProviderProps {
 
 export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [user, setUser] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const token: any = localStorage.getItem("authToken");
-    const userData: any = localStorage.getItem("userData");
-
-    if (token && userData) {
-      setUser({ token, ...JSON.parse(userData) });
+    try {
+      const userData = localStorage.getItem("userData");
+      if (userData) {
+        setUser(JSON.parse(userData));
+      }
+    } catch {
+      localStorage.removeItem("userData");
+      localStorage.removeItem("authToken");
+    } finally {
+      setIsLoading(false);
     }
   }, []);
 
   useEffect(() => {
     if (user) {
-      localStorage.setItem("authToken", user.token);
       localStorage.setItem("userData", JSON.stringify(user));
     }
   }, [user]);
 
-  const logout = () => {
+  const logout = async () => {
+    try {
+      await axios.post("/api/auth/logout", {}, { withCredentials: true });
+    } catch {
+      // Ignore network errors during logout cleanup
+    }
     localStorage.removeItem("authToken");
     localStorage.removeItem("userData");
     setUser(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, setUser, logout }}>
+    <AuthContext.Provider value={{ user, isLoading, setUser, logout }}>
       {children}
     </AuthContext.Provider>
   );

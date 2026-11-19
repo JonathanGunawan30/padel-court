@@ -1,9 +1,6 @@
 'use client'
 import { useState, useEffect, useMemo, useRef } from "react";
-import axios from "axios";
-import crypto from "crypto";
-import { Hash } from "node:crypto";
-import apiConfig from "@/config/api";
+import { apiRequest } from "@/library/api";
 import Link from "next/link";
 import { toast } from "react-toastify";
 import { message } from "@/constants/message";
@@ -101,23 +98,7 @@ export default function FieldList() {
   useEffect(() => {
     const fetchFields = async () => {
       try {
-        const serviceName: string | undefined = apiConfig.field.serviceName;
-        const signatureKey: string | undefined = apiConfig.field.signatureKey;
-        const requestAt: string = new Date().toISOString();
-        const validateKey: string = `${serviceName}:${signatureKey}:${requestAt}`;
-        const hash: Hash = crypto.createHash("sha256");
-        hash.update(validateKey);
-        const apiKey: string = hash.digest("hex");
-        const response = await axios.get(
-          `${apiConfig.field.baseUrl}/api/v1/field`,
-          {
-            headers: {
-              "x-service-name": serviceName,
-              "x-request-at": requestAt,
-              "x-api-key": apiKey,
-            },
-          }
-        );
+        const response = await apiRequest("get", "field", "/api/v1/field");
         setFields(response.data.data || []);
       } catch (error: any) {
         if (error.code === "ERR_NETWORK") {

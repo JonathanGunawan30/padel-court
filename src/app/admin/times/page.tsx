@@ -7,19 +7,12 @@ import {
   MagnifyingGlassIcon
 } from "@heroicons/react/24/outline";
 import { AuthContext } from "@/context/AuthProvider";
-import apiConfig from "@/config/api";
 import { apiRequest } from "@/library/api";
 import { toast } from "react-toastify";
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
-import { clsx, type ClassValue } from "clsx";
-import { twMerge } from "tailwind-merge";
 
 const MySwal = withReactContent(Swal);
-
-function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
-}
 
 const swalConfig: any = {
   customClass: {
@@ -44,13 +37,10 @@ export default function TimeManagement() {
   });
 
   const fetchTimes = async () => {
-    if (!user?.token) return;
+    if (!user) return;
     setIsLoading(true);
     try {
-      const response = await apiRequest('get', `${apiConfig.field.baseUrl}/api/v1/time`, {
-        serviceConfig: apiConfig.field,
-        token: user.token
-      });
+      const response = await apiRequest("get", "field", "/api/v1/time");
       setTimes(response.data.data || []);
     } catch (error) {
       toast.error("Gagal memuat data jam operasional.");
@@ -61,14 +51,12 @@ export default function TimeManagement() {
 
   useEffect(() => {
     fetchTimes();
-  }, [user?.token]);
+  }, [user]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await apiRequest('post', `${apiConfig.field.baseUrl}/api/v1/time`, {
-        serviceConfig: apiConfig.field,
-        token: user.token,
+      await apiRequest("post", "field", "/api/v1/time", {
         data: formData
       });
       toast.success("Jam operasional berhasil ditambahkan!");
@@ -94,10 +82,7 @@ export default function TimeManagement() {
 
     if (result.isConfirmed) {
       try {
-        await apiRequest('delete', `${apiConfig.field.baseUrl}/api/v1/time/${uuid}`, {
-          serviceConfig: apiConfig.field,
-          token: user.token
-        });
+        await apiRequest("delete", "field", `/api/v1/time/${uuid}`);
         toast.success("Slot jam berhasil dihapus.");
         fetchTimes();
       } catch (error: any) {

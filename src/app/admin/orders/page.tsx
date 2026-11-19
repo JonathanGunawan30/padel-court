@@ -12,16 +12,9 @@ import {
   UserIcon
 } from "@heroicons/react/24/outline";
 import { AuthContext } from "@/context/AuthProvider";
-import apiConfig from "@/config/api";
 import { apiRequest } from "@/library/api";
 import { toast } from "react-toastify";
-import moment from "moment";
-import { clsx, type ClassValue } from "clsx";
-import { twMerge } from "tailwind-merge";
-
-function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
-}
+import { cn, formatDate, formatDateTime, getOrderStatusDisplay } from "@/library/utils";
 
 export default function OrderManagement() {
   const { user } = useContext(AuthContext) as any;
@@ -29,6 +22,7 @@ export default function OrderManagement() {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   
   const [pagination, setPagination] = useState({
     page: 1,
@@ -38,13 +32,10 @@ export default function OrderManagement() {
   });
 
   const fetchOrders = async (page = 1) => {
-    if (!user?.token) return;
+    if (!user) return;
     setIsLoading(true);
     try {
-      const response = await apiRequest('get', `${apiConfig.order.baseUrl}/api/v1/order?page=${page}&limit=${pagination.limit}&sort_column=created_at&sort_order=desc`, {
-        serviceConfig: apiConfig.order,
-        token: user.token
-      });
+      const response = await apiRequest("get", "order", `/api/v1/order?page=${page}&limit=${pagination.limit}&sort_column=created_at&sort_order=desc`);
       const result = response.data.data;
       setOrders(result.data || []);
       setPagination({
@@ -62,24 +53,20 @@ export default function OrderManagement() {
 
   useEffect(() => {
     fetchOrders(pagination.page);
-  }, [user?.token, pagination.page]);
+  }, [user, pagination.page]);
 
   const handlePageChange = (newPage: number) => {
     setPagination(prev => ({ ...prev, page: newPage }));
   };
 
-  const getStatusDisplay = (status: string) => {
-    switch (status) {
-      case 'order-success':
-        return { label: 'Lunas', class: 'bg-green-100 text-green-600' };
-      case 'pending':
-        return { label: 'Menunggu Pembayaran', class: 'bg-amber-100 text-amber-600' };
-      case 'expired':
-        return { label: 'Kedaluwarsa', class: 'bg-red-100 text-red-600' };
-      default:
-        return { label: status, class: 'bg-gray-100 text-gray-600' };
-    }
-  };
+  const filteredOrders = orders.filter((order) => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return true;
+    return (
+      order.code?.toLowerCase().includes(q) ||
+      order.user_name?.toLowerCase().includes(q)
+    );
+  });
 
   const handleViewDetails = (order: any) => {
     setSelectedOrder(order);
@@ -94,6 +81,8 @@ export default function OrderManagement() {
           <MagnifyingGlassIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
           <input 
             type="text" 
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Cari order ID atau nama customer..." 
             className="w-full bg-white border border-gray-200 rounded-2xl py-3 pl-12 pr-4 text-sm focus:ring-2 focus:ring-padel-neon/50 outline-none transition-all"
           />
@@ -124,14 +113,14 @@ export default function OrderManagement() {
                     <div className="w-10 h-10 border-4 border-padel-dark border-t-padel-neon rounded-full animate-spin mx-auto" />
                   </td>
                 </tr>
-              ) : orders.length === 0 ? (
+              ) : filteredOrders.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-8 py-20 text-center text-gray-400 font-bold uppercase tracking-widest text-xs">
                     Belum ada data pesanan.
                   </td>
                 </tr>
               ) : (
-                orders.map((order) => (
+                filteredOrders.map((order) => (
                   <tr key={order.uuid} className="hover:bg-gray-50/30 transition-colors group">
                     <td className="px-8 py-6">
                       <p className="font-black text-padel-dark uppercase italic tracking-tight">#{order.code}</p>
@@ -140,7 +129,7 @@ export default function OrderManagement() {
                       {order.user_name}
                     </td>
                     <td className="px-8 py-6 text-gray-400 font-medium">
-                      {moment(order.order_date).format('DD MMM YYYY, HH:mm')}
+                      {formatDateTime(order.order_date)}
                     </td>
                     <td className="px-8 py-6 font-black text-padel-dark text-lg">
                       Rp {order.amount.toLocaleString()}
@@ -148,9 +137,9 @@ export default function OrderManagement() {
                     <td className="px-8 py-6">
                       <span className={cn(
                         "text-[10px] font-black px-3 py-1 rounded-full italic tracking-widest",
-                        getStatusDisplay(order.status).class
+                        getOrderStatusDisplay(order.status).class
                       )}>
-                        {getStatusDisplay(order.status).label}
+                        {getOrderStatusDisplay(order.status).label}
                       </span>
                     </td>
                     <td className="px-8 py-6">
@@ -277,7 +266,7 @@ export default function OrderManagement() {
                         <div>
                           <p className="font-bold text-padel-dark text-sm">{schedule.field_name}</p>
                           <p className="text-gray-400 text-[10px] font-medium uppercase tracking-wider">
-                            {moment(schedule.date).format('DD MMM YYYY')} • {schedule.time}
+                            {formatDate(schedule.date)} • {schedule.time}
                           </p>
                         </div>
                       </div>
@@ -297,7 +286,7 @@ export default function OrderManagement() {
                   <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
                     <CalendarDaysIcon className="w-3 h-3" /> Order Date
                   </p>
-                  <p className="font-bold text-padel-dark">{moment(selectedOrder.order_date).format('DD MMM YYYY, HH:mm')}</p>
+                  <p className="font-bold text-padel-dark">{formatDateTime(selectedOrder.order_date)}</p>
                 </div>
                 <div className="space-y-1">
                   <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
@@ -309,9 +298,9 @@ export default function OrderManagement() {
                   <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Status</p>
                   <span className={cn(
                     "inline-block text-[10px] font-black px-3 py-1 rounded-full italic tracking-widest mt-1",
-                    getStatusDisplay(selectedOrder.status).class
+                    getOrderStatusDisplay(selectedOrder.status).class
                   )}>
-                    {getStatusDisplay(selectedOrder.status).label}
+                    {getOrderStatusDisplay(selectedOrder.status).label}
                   </span>
                 </div>
               </div>

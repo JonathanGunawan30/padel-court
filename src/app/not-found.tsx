@@ -6,7 +6,7 @@ import Header from '@/components/organisms/header/Header';
 import Footer from '@/components/organisms/footer/Footer';
 
 // Dynamic import for Lottie to prevent SSR issues
-const Lottie = dynamic(() => import('lottie-react'), { ssr: false });
+const Lottie = dynamic(() => import('lottie-react').then((mod) => mod.Lottie), { ssr: false });
 
 export default function NotFound() {
   const [animationData, setAnimationData] = useState<any>(null);
@@ -28,7 +28,8 @@ export default function NotFound() {
         <div className="w-full max-w-[300px] md:max-w-[450px] aspect-square mb-8">
           {animationData ? (
             <Lottie 
-              animationData={animationData} 
+              src={animationData} 
+              autoplay={true}
               loop={true} 
               className="w-full h-full"
             />

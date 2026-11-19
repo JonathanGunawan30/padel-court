@@ -10,20 +10,13 @@ import {
   CheckIcon
 } from "@heroicons/react/24/outline";
 import { AuthContext } from "@/context/AuthProvider";
-import apiConfig from "@/config/api";
 import { apiRequest } from "@/library/api";
 import { toast } from "react-toastify";
-import moment from "moment";
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
-import { clsx, type ClassValue } from "clsx";
-import { twMerge } from "tailwind-merge";
+import { cn, formatDate } from "@/library/utils";
 
 const MySwal = withReactContent(Swal);
-
-function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
-}
 
 // Padel style swal configuration
 const swalConfig: any = {
@@ -59,29 +52,23 @@ export default function ScheduleManagement() {
   
   const [formData, setFormData] = useState({
     field_id: "",
-    month: moment().month() + 1,
-    year: moment().year()
+    month: new Date().getMonth() + 1,
+    year: new Date().getFullYear()
   });
 
   const fetchFields = async () => {
     try {
-      const response = await apiRequest('get', `${apiConfig.field.baseUrl}/api/v1/field`, {
-        serviceConfig: apiConfig.field,
-        token: user.token
-      });
+      const response = await apiRequest("get", "field", "/api/v1/field");
       setFields(response.data.data || []);
     } catch (error) {}
   };
 
   const fetchSchedules = async (page = 1) => {
-    if (!user?.token) return;
+    if (!user) return;
     setIsLoading(true);
     setSelectedIds([]); // Clear selection on page change
     try {
-      const response = await apiRequest('get', `${apiConfig.field.baseUrl}/api/v1/field/schedule/pagination?page=${page}&limit=${pagination.limit}&sort_column=date&sort_order=desc`, {
-        serviceConfig: apiConfig.field,
-        token: user.token
-      });
+      const response = await apiRequest("get", "field", `/api/v1/field/schedule/pagination?page=${page}&limit=${pagination.limit}&sort_column=date&sort_order=desc`);
       const result = response.data.data;
       setSchedules(result.data || []);
       setPagination({
@@ -100,7 +87,7 @@ export default function ScheduleManagement() {
   useEffect(() => {
     fetchFields();
     fetchSchedules(pagination.page);
-  }, [user?.token, pagination.page]);
+  }, [user, pagination.page]);
 
   const handlePageChange = (newPage: number) => {
     setPagination(prev => ({ ...prev, page: newPage }));
@@ -108,13 +95,11 @@ export default function ScheduleManagement() {
 
   const handleGenerate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user?.token || !formData.field_id) return;
+    if (!user || !formData.field_id) return;
 
     setIsGenerating(true);
     try {
-      await apiRequest('post', `${apiConfig.field.baseUrl}/api/v1/field/schedule/one-month`, {
-        serviceConfig: apiConfig.field,
-        token: user.token,
+      await apiRequest("post", "field", "/api/v1/field/schedule/one-month", {
         data: {
           field_id: formData.field_id,
           month: parseInt(formData.month.toString()),
@@ -145,10 +130,7 @@ export default function ScheduleManagement() {
 
     if (result.isConfirmed) {
       try {
-        await apiRequest('delete', `${apiConfig.field.baseUrl}/api/v1/field/schedule/${uuid}`, {
-          serviceConfig: apiConfig.field,
-          token: user.token
-        });
+        await apiRequest("delete", "field", `/api/v1/field/schedule/${uuid}`);
         toast.success("Jadwal dihapus.");
         fetchSchedules(pagination.page);
       } catch (error) {
@@ -178,10 +160,7 @@ export default function ScheduleManagement() {
 
       for (const uuid of selectedIds) {
         try {
-          await apiRequest('delete', `${apiConfig.field.baseUrl}/api/v1/field/schedule/${uuid}`, {
-            serviceConfig: apiConfig.field,
-            token: user.token
-          });
+          await apiRequest("delete", "field", `/api/v1/field/schedule/${uuid}`);
           successCount++;
         } catch (error) {
           failCount++;
@@ -213,7 +192,7 @@ export default function ScheduleManagement() {
     const searchStr = searchQuery.toLowerCase();
     return (
       schedule.field_name?.toLowerCase().includes(searchStr) ||
-      moment(schedule.date).format('DD MMM YYYY').toLowerCase().includes(searchStr) ||
+      formatDate(schedule.date).toLowerCase().includes(searchStr) ||
       schedule.time?.toLowerCase().includes(searchStr) ||
       schedule.status?.toLowerCase().includes(searchStr)
     );
@@ -319,7 +298,7 @@ export default function ScheduleManagement() {
                       <p className="font-black text-padel-dark uppercase italic tracking-tight">{schedule.field_name}</p>
                     </td>
                     <td className="px-8 py-6 text-gray-500 font-bold">
-                      {moment(schedule.date).format('DD MMM YYYY')}
+                      {formatDate(schedule.date)}
                     </td>
                     <td className="px-8 py-6">
                       <div className="flex items-center space-x-2 text-gray-400">
